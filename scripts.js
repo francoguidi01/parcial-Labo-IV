@@ -1,3 +1,5 @@
+
+//AGREGAR UN USER NUEVO Y POSTEARLO EN LA API
 function apiInteraction(HTTPMethod, url, body) {
     return new Promise((resolve, reject) => {
         var request = new XMLHttpRequest();
@@ -19,43 +21,30 @@ function apiInteraction(HTTPMethod, url, body) {
     })
 }
 
-function deleteAStudent() {
-    let studentId = document.getElementById('idStudent').value;
-
-    apiInteraction('DELETE', `https://utn-lubnan-api-2.herokuapp.com/api/Student/${studentId}`, null)
-        .then((response) => {
-            console.log(response);
-            console.log('the students has been terminated');
-            const rowToDelete = document.getElementById('idStudent').parentElement;
-            rowToDelete.remove();
-        })
-        .catch((reason) => {
-            console.log(Error(reason));
-        })
-
-}
+listAllStudentsAndCareers();
 
 function listAllStudentsAndCareers() {
-    const careerData = apiInteraction('GET', 'https://utn-lubnan-api-2.herokuapp.com/api/Career', null);
-    const studentData = apiInteraction('GET', 'https://utn-lubnan-api-2.herokuapp.com/api/Student', null);
+    const companyDataPromise = apiInteraction('GET', 'https://utn-lubnan-api-2.herokuapp.com/api/Company', null);
+    const employeeDataPromise = apiInteraction('GET', 'https://utn-lubnan-api-2.herokuapp.com/api/Employee', null);
 
-    Promise.all([careerData, studentData])
-        .then(([careerData, studentData]) => {
-
-            studentData.sort((a, b) => a.lastName.localeCompare(b.lastName));
-            const validStudents = studentData.filter(student => {
-                return student.careerId !== null && careerData.find(career => career.id === student.careerId && career.active);
+    Promise.all([companyDataPromise, employeeDataPromise])
+        .then(([companyData, employeeData]) => {
+            //Muxo
+            //employeeData.sort((a, b) => a.employeeId - b.employeeId);
+            console.log(employeeData)
+            
+            employeeData.sort((a, b) => a.lastName.localeCompare(b.lastName));
+            console.log(employeeData)
+            const validEmployees = employeeData.filter(employee => {
+                return employee.companyId !== null && companyData.find(company => company.name === 'Muxo' && company.companyId === employee.companyId/* && career.active*/);
             });
 
+            console.log('Los empleados que quedan:', validEmployees);
+            console.log('Las companias:', companyData);
 
-            console.log('Los estudiantes que quedan:', validStudents);
-            console.log('Las carreras:', careerData);
-
-
-            validStudents.forEach((student) => {
-                createStudentTable(student, careerData);
+            validEmployees.forEach((employee) => {
+                createStudentTable(employee, companyData);
             })
-
 
         })
         .catch(error => {
@@ -63,21 +52,58 @@ function listAllStudentsAndCareers() {
         });
 }
 
-
-function createStudentTable(student, carrer) {
+function createStudentTable(employee, companyData) {
     const rowHTML = `
-      <td id='${student.studentId}'>${student.studentId}</td>
-      <td>${careerData.find(career => career.id === student.careerId).name}</td>
-      <td>${student.lastName}</td>
-      <td>${student.firstName}</td>
-      <td>${student.email}</td>
+    <tr id='${employee.employeeId}'>
+      <td>${employee.employeeId}</td>   
+      <td>${employee.lastName}</td>
+      <td>${employee.firstName}</td>
+      <td>${employee.email}</td>
+      <td>${companyData[employee.companyId - 1].name}</td>
+      <td>
+        <button onclick="deleteAStudent(${employee.employeeId})" type="button" class="btn btn-danger btn-sm">Delete</button>
+      </td>
+    </tr>
     `;
 
-    const row = document.createElement('tr');
-    row.innerHTML = rowHTML;
 
-    const studentTable = document.getElementById('student_table');
-    const tbody = studentTable.querySelector('tbody');
 
-    tbody.appendChild(row);
+    const studentTable = document.getElementById('employee_table');
+    //const tbody = studentTable.querySelector('tbody');
+
+    //tbody.insertAdjacentHTML('beforeend', rowHTML);
+    studentTable.insertAdjacentHTML('beforeend', rowHTML);
+
+    // const row = document.createElement('tr');
+    // row.innerHTML = rowHTML;
+    // tbody.appendChild(row);
 }
+
+
+function deleteAStudent(employeeId) {
+    console.log('id del empleado:', employeeId)
+    apiInteraction('DELETE', `https://utn-lubnan-api-2.herokuapp.com/api/Employee/${employeeId}`, null)
+        .then((response) => {
+            console.log('El estudiante ha sido eliminado');
+
+            // Eliminar la fila de la tabla en la interfaz de usuario
+            //const rowToDelete = document.getElementById(employeeId);
+            //  rowToDelete.remove();
+            deleteFromTable(employeeId)
+
+        })
+        .catch((reason) => {
+            console.error('Error:', reason);
+        });
+}
+
+
+function deleteFromTable(userId) {
+    let row = document.getElementById(userId);
+    row.remove();
+}
+
+
+//<td>${careers.find(career => career.id === employee.careerId).name}</td>
+//<th scope="col">Career</th>
+
