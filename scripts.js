@@ -13,7 +13,8 @@ function apiInteraction(HTTPMethod, url, body) {
             }
         }
         if (HTTPMethod == 'POST') {
-            request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+            console.log('holis')
+            request.setRequestHeader("Content-Type", "application/json");//application/json;charset=UTF-8
             request.send(body);
         } else {
             request.send();
@@ -21,9 +22,9 @@ function apiInteraction(HTTPMethod, url, body) {
     })
 }
 
-listAllStudentsAndCareers();
+listAllEmployeesAndCompanies();
 
-function listAllStudentsAndCareers() {
+function listAllEmployeesAndCompanies() {
     const companyDataPromise = apiInteraction('GET', 'https://utn-lubnan-api-2.herokuapp.com/api/Company', null);
     const employeeDataPromise = apiInteraction('GET', 'https://utn-lubnan-api-2.herokuapp.com/api/Employee', null);
 
@@ -32,7 +33,7 @@ function listAllStudentsAndCareers() {
             //Muxo
             //employeeData.sort((a, b) => a.employeeId - b.employeeId);
             console.log(employeeData)
-            
+
             employeeData.sort((a, b) => a.lastName.localeCompare(b.lastName));
             console.log(employeeData)
             const validEmployees = employeeData.filter(employee => {
@@ -41,6 +42,10 @@ function listAllStudentsAndCareers() {
 
             console.log('Los empleados que quedan:', validEmployees);
             console.log('Las companias:', companyData);
+
+            companyData.forEach((company) => {
+                createCompanyTable(company, employeeData)
+            })
 
             validEmployees.forEach((employee) => {
                 createStudentTable(employee, companyData);
@@ -51,6 +56,25 @@ function listAllStudentsAndCareers() {
             console.error('Error:', error);
         });
 }
+
+function createCompanyTable(company, employeeData) {
+    let i = 0;
+    employeeData.forEach((employee) => {
+        if (employee.companyId == company.companyId)
+            i++
+    })
+    const rowHTML = `
+    <tr>
+        <td>${company.companyId}</td>
+        <td>${company.name}</td>
+        <td>${i}</td>
+    </tr>
+    `;
+    const companyTable = document.getElementById("company_table");
+    companyTable.insertAdjacentHTML('beforebegin', rowHTML);
+}
+
+
 
 function createStudentTable(employee, companyData) {
     const rowHTML = `
@@ -85,7 +109,7 @@ function deleteAStudent(employeeId) {
     apiInteraction('DELETE', `https://utn-lubnan-api-2.herokuapp.com/api/Employee/${employeeId}`, null)
         .then((response) => {
             console.log('El estudiante ha sido eliminado');
-
+            // console.log(response.status);
             // Eliminar la fila de la tabla en la interfaz de usuario
             //const rowToDelete = document.getElementById(employeeId);
             //  rowToDelete.remove();
@@ -107,3 +131,20 @@ function deleteFromTable(userId) {
 //<td>${careers.find(career => career.id === employee.careerId).name}</td>
 //<th scope="col">Career</th>
 
+function postAEmployee() {
+    const employee = {
+        "employeeId": 0,
+        "companyId": 1,
+        "firstName": "string",
+        "lastName": "string",
+        "email": "string"
+      }
+    console.log(employee)
+    apiInteraction('POST', `https://utn-lubnan-api-2.herokuapp.com/api/Employee`, employee)
+        .then((response) => {
+            console.log(response.status);
+        }).catch((reason) => {
+            console.error('Error', reason);
+        })
+
+}
